@@ -7,13 +7,9 @@ from sklearn.metrics import accuracy_score, f1_score, classification_report, con
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Load Data
 train = pd.read_csv(r"C:\Users\sanka\sanfran\data\train.csv")
 test = pd.read_csv(r"C:\Users\sanka\sanfran\data\test.csv")
 
-# 1. Data Exploration and Visualization
-# ----------------------------------------------------
-# Create directories to save the plots if they don't exist
 import os
 plot_dir = 'plots'
 if not os.path.exists(plot_dir):
@@ -74,8 +70,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(plot_dir, 'heatmap_crimes_day_hour.png'))
 plt.close()
 
-# 2. Feature Engineering
-# ----------------------------------------------------
+
 def process_data(df):
     # Convert dates to datetime and extract features
     df['Dates'] = pd.to_datetime(df['Dates'])
@@ -88,37 +83,24 @@ def process_data(df):
     df['IsWeekend'] = df['DayOfWeek_num'].isin([5,6]).astype(int)
     df['Quarter'] = df['Dates'].dt.quarter
     df['WeekOfYear'] = df['Dates'].dt.isocalendar().week
-
-    # Process 'Address' field
     df['Intersection'] = df['Address'].apply(lambda x: 1 if '/' in x else 0)
-
-    # Encode 'PdDistrict' using Label Encoding
     df['PdDistrict'] = df['PdDistrict'].astype('category')
-
-    # Keep necessary columns
     features = ['Year', 'Month', 'Day', 'Hour', 'Minute', 'DayOfWeek_num',
                 'IsWeekend', 'Quarter', 'WeekOfYear', 'PdDistrict',
                 'Intersection', 'X', 'Y']
     return df[features]
 
-# Process datasets
 X_train = process_data(train)
 X_test = process_data(test)
 y_train = train['Category']
 
-# Encode target variable
 le_y = LabelEncoder()
 y_train_encoded = le_y.fit_transform(y_train)
 
-# Identify categorical features
 cat_features = ['PdDistrict', 'Intersection', 'DayOfWeek_num', 'IsWeekend', 'Quarter']
 
-# 3. Model Training with Cross-Validation and Metrics Logging
-# -----------------------------------------------------------
-# Cross-Validation Setup
 skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
-# Arrays to store predictions and metrics
 test_preds = np.zeros((len(X_test), len(le_y.classes_)))
 oof_preds = np.zeros((len(X_train), len(le_y.classes_)))
 accuracy_list = []
@@ -174,9 +156,6 @@ print("\nOverall Performance:")
 print(f"Mean Accuracy: {np.mean(accuracy_list):.4f}")
 print(f"Mean F1 Score: {np.mean(f1_list):.4f}")
 
-# 4. Confusion Matrix Visualization
-# ----------------------------------------------------
-# Since the number of classes is large, select the top N classes for visualization
 N = 10  # Number of classes to display
 class_counts = np.bincount(y_train_encoded)
 top_N_classes = np.argsort(class_counts)[-N:]
